@@ -20,9 +20,14 @@ Ingress) statt manuellem Docker-Run.
 5. Ersten Account registrieren (`/register`) – wird automatisch Admin,
    siehe Haupt-Repo für die weiteren Schritte (Fahrzeug anlegen etc.)
 
-Für die HACS-Integration (Statistik-Sensoren + vereinfachter Push aus HA-
-Automationen) siehe separat:
-[Lademonitor-HA](https://github.com/iDomi94/Lademonitor-HA)
+> **Dazu passend:** [Lademonitor-HA](https://github.com/iDomi94/Lademonitor-HA)
+> (HACS-Integration) holt Statistik-Sensoren (Kosten/Verbrauch/km) direkt in
+> HA und ersetzt den bisherigen `rest_command`-Aufruf mit manuellem
+> Bearer-Token durch einen normalen Service
+> (`lademonitor.push_charging_session`) – deren README enthält eine
+> vollständige Beispiel-Automation. Läuft der Server als dieses Add-on auf
+> derselben HA-Instanz, als Server-URL einfach `http://localhost:8000`
+> (interner Add-on-Port) oder die HA-IP mit Port `8111` eintragen.
 
 ## Daten & Backup
 
