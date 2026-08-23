@@ -1,0 +1,3 @@
+[submodule "lademonitor/server"]
+	path = lademonitor/server
+	url = https://github.com/iDomi94/Lademonitor-Server.git

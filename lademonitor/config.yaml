@@ -1,0 +1,31 @@
+name: Lademonitor
+version: "0.1.0"
+slug: lademonitor
+description: >-
+  Selbstgehostete Ladevorgang-Tracking-App für ein E-Auto (Kosten, Verbrauch,
+  Ladeorte, kWh/100km) - Backend, Web-UI und Postgres in einem Container,
+  keine externe Datenbank nötig.
+url: https://github.com/iDomi94/Lademonitor-Server
+arch:
+  - amd64
+  - aarch64
+startup: application
+boot: auto
+# Eigener Entrypoint (run.sh) verwaltet Postgres + uvicorn bereits selbst als
+# PID1 (analog zum bestehenden entrypoint.sh im Server-Repo, bewusst kein
+# s6-overlay) - Supervisor soll keinen zusätzlichen Init-Layer injizieren.
+init: false
+ingress: true
+ingress_port: 8000
+panel_icon: mdi:ev-station
+ports:
+  8000/tcp: 8111
+ports_description:
+  8000/tcp: "Web-UI/REST-API im LAN (z.B. für die iOS-App oder die Lademonitor-HA-Integration) - für den Browser-Zugriff aus HA selbst reicht Ingress"
+map:
+  - type: data
+    read_only: false
+options:
+  log_level: info
+schema:
+  log_level: list(trace|debug|info|warning|error|critical)
