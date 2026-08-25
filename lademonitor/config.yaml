@@ -1,5 +1,5 @@
 name: Lademonitor
-version: "0.1.0"
+version: "0.1.1"
 slug: lademonitor
 description: >-
   Selbstgehostete Ladevorgang-Tracking-App für ein E-Auto (Kosten, Verbrauch,

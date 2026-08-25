@@ -29,6 +29,33 @@ Ingress) statt manuellem Docker-Run.
 > derselben HA-Instanz, als Server-URL einfach `http://localhost:8000`
 > (interner Add-on-Port) oder die HA-IP mit Port `8111` eintragen.
 
+## Netzwerkzugriff (lokal vs. extern)
+
+Sowohl der Ingress-Zugriff (Sidebar-Button) als auch der Direktport `8111`
+funktionieren nur innerhalb des lokalen Netzwerks deines Home-Assistant-
+Servers – keiner der beiden Wege macht die App automatisch von außerhalb
+erreichbar.
+
+- **Ingress** ist zudem kein Ersatz für einen echten API-Zugang: Die
+  Sidebar-URL ist an eine eingeloggte HA-Browser-Session gebunden
+  (Token pro Session) und daher für eigenständige API-Clients wie die
+  [iOS-App](https://github.com/iDomi94/Lademonitor-App) nicht nutzbar –
+  die App muss immer den Direktport ansprechen.
+- Für Zugriff von unterwegs (z.B. die iOS-App außerhalb des Heimnetzes)
+  gibt es zwei Wege:
+  1. **VPN ins Heimnetz** (z.B. WireGuard) – einfachste und empfohlene
+     Lösung, kein zusätzlicher öffentlicher Port nötig.
+  2. **Eigener Reverse-Proxy/Nginx-Vhost** (eigene Subdomain mit TLS),
+     der auf `http://<home-assistant-ip>:8111` zeigt – analog zum
+     bisherigen Unraid+Nginx-Setup. Falls du Home Assistant selbst
+     schon per Nginx nach außen gibst, reicht das dafür **nicht** aus:
+     dieser Proxy zeigt in der Regel nur auf HAs eigenen Port (8123,
+     inkl. der darüber laufenden Ingress-Pfade), nicht auf 8111 – dafür
+     braucht es einen eigenen, zusätzlichen Server-/Location-Block.
+  3. Bei öffentlicher Erreichbarkeit unbedingt den Sicherheitshinweis im
+     [Server-Repo](https://github.com/iDomi94/Lademonitor-Server#sicherheitshinweis)
+     beachten (u.a. kein Rate-Limiting auf Login/Registrierung).
+
 ## Daten & Backup
 
 Alle Daten (komplette Postgres-Datenbank) liegen unter dem von Supervisor
