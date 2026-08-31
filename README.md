@@ -1,5 +1,7 @@
 # Lademonitor – Home Assistant Add-on
 
+**Sprache:** Deutsch | [English](README.en.md)
+
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 
 Home-Assistant-Supervisor-Add-on-Repository für
