@@ -103,11 +103,26 @@ hand:
 4. Supervisor then shows an update on every installation – add-on and
    server version stay identical, with no manual submodule bump.
 
-One-time setup for the workflows to work: under **Settings → Actions →
-General → Workflow permissions**, enable "Read and write permissions" (needed
-for the Git tag push and the GHCR push using the default `GITHUB_TOKEN`),
-and make the resulting GHCR package "Public" once so Supervisor can pull it
-without logging in.
+One-time setup for the workflows to work:
+
+1. **Settings → Actions → General → Workflow permissions** → enable
+   "Read and write permissions" (a prerequisite for any push using the
+   default `GITHUB_TOKEN`, including the GHCR push in `build.yml`).
+2. **Settings → Secrets and variables → Actions → New repository secret**
+   → name it `PAT_TOKEN`, value a fine-grained Personal Access Token
+   (**your account's Settings → Developer settings → Personal access
+   tokens → Fine-grained tokens**) scoped to this repository only, with
+   **Contents: Read and write** permission. Reason: when
+   `check-server-release.yml` pushes its tag using the default
+   `GITHUB_TOKEN`, GitHub's loop-prevention deliberately does **not**
+   trigger another workflow run – `build.yml` would then never start
+   automatically. With `PAT_TOKEN`, the chain release → tag → build →
+   image runs fully automatically; without the secret, the submodule and
+   version update still happen, but `build.yml` then has to be started
+   manually ("Run workflow" in the Actions tab).
+3. After the first successful build, make the resulting GHCR package
+   (`lademonitor-addon`) "Public" once so Supervisor can pull it without
+   logging in.
 
 ## Building/testing locally
 

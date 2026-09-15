@@ -106,12 +106,26 @@ aber nicht mehr von Hand, sondern automatisch:
    und Server-Version sind damit immer identisch, ganz ohne manuellen
    Submodule-Bump.
 
-Einmalig nötig, damit die Workflows funktionieren: In den
-Repository-Einstellungen unter **Settings → Actions → General → Workflow
-permissions** „Read and write permissions“ aktivieren (für den Git-Tag-Push
-und den GHCR-Push mit dem Standard-`GITHUB_TOKEN`), und das entstehende
-GHCR-Package einmal auf „Public“ stellen, damit Supervisor es ohne Login
-ziehen kann.
+Einmalig nötig, damit die Workflows funktionieren:
+
+1. **Settings → Actions → General → Workflow permissions** →
+   „Read and write permissions“ aktivieren (Grundvoraussetzung für jeden
+   Push mit dem Standard-`GITHUB_TOKEN`, u.a. den GHCR-Push in `build.yml`).
+2. **Settings → Secrets and variables → Actions → New repository secret**
+   → Name `PAT_TOKEN`, Wert ein fine-grained Personal Access Token
+   (**Settings deines Accounts → Developer settings → Personal access
+   tokens → Fine-grained tokens**) mit Zugriff nur auf dieses Repository
+   und Berechtigung **Contents: Read and write**. Grund: Pusht
+   `check-server-release.yml` seinen Tag mit dem Standard-`GITHUB_TOKEN`,
+   löst GitHub aus Endlosschleifen-Schutz **keinen** weiteren
+   Workflow-Run aus – `build.yml` würde also nie automatisch starten.
+   Mit `PAT_TOKEN` funktioniert die Kette Release → Tag → Build → Image
+   vollautomatisch; ohne das Secret laufen Submodule- und
+   Versions-Update weiterhin, aber `build.yml` muss danach manuell
+   angestoßen werden ("Run workflow" im Actions-Tab).
+3. Nach dem ersten erfolgreichen Build das entstandene GHCR-Package
+   (`lademonitor-addon`) einmal auf **Public** stellen, damit Supervisor
+   es ohne Login ziehen kann.
 
 ## Lokal bauen/testen
 

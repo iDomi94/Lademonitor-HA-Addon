@@ -19,10 +19,18 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
+      # Push/Tag mit dem Standard-GITHUB_TOKEN loesen aus GitHub-eigenem
+      # Endlosschleifen-Schutz KEINEN weiteren Workflow-Run aus - build.yml
+      # wuerde also nie automatisch starten. PAT_TOKEN (Repo-Secret, siehe
+      # README) ist ein Personal Access Token und umgeht diese Einschraenkung.
+      # Fehlt das Secret, faellt es auf GITHUB_TOKEN zurueck (Submodule +
+      # Version werden dann weiterhin aktualisiert, build.yml muss in dem
+      # Fall aber manuell angestossen werden).
       - uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
+          token: ${{ secrets.PAT_TOKEN || github.token }}
 
       - name: Neueste Server-Version ermitteln
         id: latest
