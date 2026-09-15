@@ -70,27 +70,48 @@ CSV-Backups.
 
 ```
 repository.yaml       - Add-on-Repository-Metadaten für Supervisor
+.github/workflows/
+  check-server-release.yml - prueft periodisch auf neue Lademonitor-Server-
+                              Releases, aktualisiert Submodule + Version, taggt
+  build.yml                 - baut bei jedem v*.*.*-Tag das Multi-Arch-Image
+                              und veroeffentlicht es nach GHCR
 lademonitor/
-  config.yaml           - Add-on-Konfiguration (Ports, Ingress, Optionen)
-  build.yaml              - Basis-Image pro Architektur
+  config.yaml           - Add-on-Konfiguration (image, Ports, Ingress, Optionen)
+  build.yaml              - Basis-Image pro Architektur (nur fuer lokale Builds/CI)
   Dockerfile                - Baut Backend + Postgres in einem Image
   run.sh                      - Entrypoint: startet Postgres + uvicorn
   server/                      - Git-Submodule -> Lademonitor-Server
                               (liefert backend/app + requirements.txt)
 ```
 
-`server/` ist ein Git-Submodule, kein kopierter Code – vermeidet Drift
-zwischen Server- und Add-on-Repo. Nach einem Update von
-`Lademonitor-Server` den Submodule-Pointer aktualisieren:
+**Wie bei [Wealth Dashboard](https://github.com/halvar20000/wealth-dashboard)**
+baut Supervisor nichts mehr selbst auf dem Home-Assistant-Host: `config.yaml`
+referenziert unter `image:` ein fertiges, vorgebautes Multi-Arch-Image aus
+GHCR (`ghcr.io/idomi94/lademonitor-addon`), Supervisor zieht nur noch den zur
+`version` passenden Tag.
 
-```bash
-git submodule update --remote lademonitor/server
-git add lademonitor/server
-git commit -m "Server-Submodule aktualisieren"
-```
+`server/` bleibt dabei ein Git-Submodule, kein kopierter Code, um Drift
+zwischen Server- und Add-on-Repo im Quellcode zu vermeiden – gehalten wird es
+aber nicht mehr von Hand, sondern automatisch:
 
-und die `version` in `lademonitor/config.yaml` entsprechend erhöhen (nötig,
-damit Supervisor ein Update anzeigt).
+1. `check-server-release.yml` läuft alle 6 Stunden (und manuell per
+   „Run workflow“) und prüft das neueste `v*.*.*`-Release von
+   `Lademonitor-Server`.
+2. Bei einer neuen Version setzt es den Submodule-Pointer auf genau diesen
+   Tag, hebt `version` in `lademonitor/config.yaml` auf denselben Stand an
+   und pusht einen passenden Git-Tag (z.B. `v0.19.0`).
+3. Dieser Tag löst `build.yml` aus: Multi-Arch-Build (amd64/aarch64) und
+   Push nach `ghcr.io/idomi94/lademonitor-addon:<version>` (+ `:latest`).
+4. Supervisor zeigt danach auf allen Installationen ein Update an – Add-on-
+   und Server-Version sind damit immer identisch, ganz ohne manuellen
+   Submodule-Bump.
+
+Einmalig nötig, damit die Workflows funktionieren: In den
+Repository-Einstellungen unter **Settings → Actions → General → Workflow
+permissions** „Read and write permissions“ aktivieren (für den Git-Tag-Push
+und den GHCR-Push mit dem Standard-`GITHUB_TOKEN`), und das entstehende
+GHCR-Package einmal auf „Public“ stellen, damit Supervisor es ohne Login
+ziehen kann.
 
 ## Lokal bauen/testen
 

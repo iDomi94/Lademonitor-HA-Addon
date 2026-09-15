@@ -1,0 +1,74 @@
+name: Add-on-Image bauen und veroeffentlichen
+
+# Baut das Add-on als fertiges Multi-Arch-Image und pusht es nach GHCR,
+# sobald ein Versions-Tag (v*.*.*) auf dieses Repo gepusht wird - analog
+# zu Wealth-Dashboard, dessen Home-Assistant-Add-on ebenfalls ein
+# vorgebautes Image referenziert statt auf dem HA-Host selbst zu bauen.
+# Der Tag wird nicht von Hand gesetzt, sondern von
+# check-server-release.yml, sobald Lademonitor-Server eine neue
+# v*.*.*-Version veroeffentlicht (siehe dort).
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/idomi94/lademonitor-addon
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Version aus Tag ableiten
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      # Verhindert ein veroeffentlichtes Image, dessen Versionsnummer im
+      # Add-on selbst (Supervisor-Update-Anzeige) nicht zum Tag passt.
+      - name: config.yaml-Version gegen Tag pruefen
+        run: |
+          CONFIG_VERSION=$(grep -m1 '^version:' lademonitor/config.yaml | sed -E 's/version: *"?([^"]+)"?/\1/')
+          if [ "$CONFIG_VERSION" != "${{ steps.version.outputs.version }}" ]; then
+            echo "config.yaml (version: $CONFIG_VERSION) stimmt nicht mit Tag v${{ steps.version.outputs.version }} ueberein" >&2
+            exit 1
+          fi
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      # BUILD_FROM ist absichtlich fuer beide Plattformen identisch:
+      # postgres:16 ist selbst ein Multi-Arch-Image, Buildx zieht pro
+      # Ziel-Plattform automatisch die passende Variante (siehe
+      # build.yaml, das dieselben Werte fuer lokale Builds dokumentiert).
+      - uses: docker/build-push-action@v6
+        with:
+          context: lademonitor
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            BUILD_FROM=postgres:16
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.version.outputs.version }}
+            ${{ env.IMAGE }}:latest
+          # Klassisches Docker-Schema-2-Manifest statt OCI-Image-Index
+          # mit Provenance/SBOM-Attestations - Supervisors Update-Check
+          # liest wie Unraids nur Schema-2 und wuerde die zusaetzlichen
+          # platform:"unknown"-Attestation-Manifeste sonst fehlinterpretieren
+          # und das Add-on faelschlich als "up to date" anzeigen.
+          provenance: false
+          sbom: false
+          outputs: type=registry,oci-mediatypes=false

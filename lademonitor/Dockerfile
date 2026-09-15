@@ -1,10 +1,15 @@
-# Add-on-Build fuer Home Assistant Supervisor: Postgres + FastAPI-Backend im
-# selben Container, analog zum bestehenden Unraid-Einzelcontainer-Dockerfile
-# in Lademonitor-Server (bewusst KEIN s6-overlay/HA-Base-Image - siehe
-# config.yaml, run.sh uebernimmt die PID1-Rolle selbst wie entrypoint.sh dort).
+# Add-on-Image: Postgres + FastAPI-Backend im selben Container, analog zum
+# bestehenden Unraid-Einzelcontainer-Dockerfile in Lademonitor-Server
+# (bewusst KEIN s6-overlay/HA-Base-Image - siehe config.yaml, run.sh
+# uebernimmt die PID1-Rolle selbst wie entrypoint.sh dort).
+# Wird NICHT mehr auf dem HA-Host gebaut: .github/workflows/build.yml baut
+# dieses Image bei jedem v*.*.*-Tag als Multi-Arch-Image und pusht es nach
+# GHCR; config.yaml referenziert nur noch den fertigen Image-Tag (siehe
+# README, Abschnitt "Aufbau dieses Repos").
 # Backend-Code kommt per Git-Submodule aus Lademonitor-Server (Pfad
 # server/, siehe .gitmodules im Repo-Root) statt kopiert zu werden, um Drift
-# zwischen Server- und Add-on-Repo zu vermeiden.
+# zwischen Server- und Add-on-Repo zu vermeiden - check-server-release.yml
+# haelt den Submodule-Pointer automatisch auf dem neuesten Server-Release.
 ARG BUILD_FROM
 FROM ${BUILD_FROM}
 

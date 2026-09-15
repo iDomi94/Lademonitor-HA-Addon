@@ -1,0 +1,58 @@
+name: Auf neue Lademonitor-Server-Version pruefen
+
+# Ersetzt das bisherige manuelle "git submodule update --remote" (siehe
+# README-Historie): prueft periodisch, ob Lademonitor-Server ein neues
+# v*.*.*-Release veroeffentlicht hat. Falls ja, wird das Submodule auf
+# genau diesen Tag gesetzt, config.yaml auf dieselbe Versionsnummer
+# gebracht (Add-on- und Server-Version bleiben damit identisch, analog
+# zu Wealth-Dashboard) und ein passender Git-Tag gepusht - der loest
+# build.yml aus, das das Image tatsaechlich baut und veroeffentlicht.
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Neueste Server-Version ermitteln
+        id: latest
+        run: |
+          TAG=$(curl -fsSL https://api.github.com/repos/iDomi94/Lademonitor-Server/releases/latest | jq -r .tag_name)
+          if [ -z "$TAG" ] || [ "$TAG" = "null" ]; then
+            echo "Kein Release gefunden" >&2
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Aktuelle Addon-Version ermitteln
+        id: current
+        run: |
+          echo "version=$(grep -m1 '^version:' lademonitor/config.yaml | sed -E 's/version: *"?([^"]+)"?/\1/')" >> "$GITHUB_OUTPUT"
+
+      - name: Submodule + Version aktualisieren und taggen
+        if: steps.latest.outputs.version != steps.current.outputs.version
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git -C lademonitor/server fetch --tags origin
+          git -C lademonitor/server checkout "${{ steps.latest.outputs.tag }}"
+
+          sed -i "s/^version:.*/version: \"${{ steps.latest.outputs.version }}\"/" lademonitor/config.yaml
+
+          git add lademonitor/server lademonitor/config.yaml
+          git commit -m "Server-Submodule auf ${{ steps.latest.outputs.tag }} aktualisieren"
+          git tag "v${{ steps.latest.outputs.version }}"
+          git push origin HEAD:main
+          git push origin "v${{ steps.latest.outputs.version }}"

@@ -1,3 +1,7 @@
+# Wird von Supervisor nicht mehr gelesen, seit config.yaml ein `image:`
+# referenziert (Supervisor baut dann nicht selbst, siehe README). Bleibt
+# als Referenz fuer lokale Builds und fuer .github/workflows/build.yml
+# stehen, das denselben BUILD_FROM-Wert per --build-arg setzt.
 build_from:
   amd64: library/postgres:16
   aarch64: library/postgres:16

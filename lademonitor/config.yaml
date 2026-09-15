@@ -1,11 +1,19 @@
 name: Lademonitor
-version: "0.1.1"
+# Identisch zur Lademonitor-Server-Versionsnummer - wird von
+# check-server-release.yml automatisch auf dem aktuellen Stand gehalten,
+# sobald der Server ein neues v*.*.*-Release veroeffentlicht.
+version: "0.9.1"
 slug: lademonitor
 description: >-
   Selbstgehostete Ladevorgang-Tracking-App für ein E-Auto (Kosten, Verbrauch,
   Ladeorte, kWh/100km) - Backend, Web-UI und Postgres in einem Container,
   keine externe Datenbank nötig.
 url: https://github.com/iDomi94/Lademonitor-Server
+# Fertig gebautes Multi-Arch-Image aus GHCR (siehe .github/workflows/) -
+# Supervisor baut nichts mehr auf dem HA-Host, sondern zieht denselben
+# Image-Tag, den auch build.yml veroeffentlicht hat (analog zu
+# Wealth-Dashboard, das nach demselben Prinzip funktioniert).
+image: ghcr.io/idomi94/lademonitor-addon
 arch:
   - amd64
   - aarch64
