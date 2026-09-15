@@ -2,7 +2,7 @@ name: Lademonitor
 # Identisch zur Lademonitor-Server-Versionsnummer - wird von
 # check-server-release.yml automatisch auf dem aktuellen Stand gehalten,
 # sobald der Server ein neues v*.*.*-Release veroeffentlicht.
-version: "0.9.1"
+version: "0.19.0"
 slug: lademonitor
 description: >-
   Selbstgehostete Ladevorgang-Tracking-App für ein E-Auto (Kosten, Verbrauch,
