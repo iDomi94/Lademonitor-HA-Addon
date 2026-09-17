@@ -48,8 +48,27 @@ jobs:
         run: |
           echo "version=$(grep -m1 '^version:' lademonitor/config.yaml | sed -E 's/version: *"?([^"]+)"?/\1/')" >> "$GITHUB_OUTPUT"
 
+      # Nicht nur "unterschiedlich", sondern "echt neuer" pruefen: die
+      # GitHub-API fuer /releases/latest kann bei einem voruebergehenden
+      # Ausfall/Cache-Haenger kurzzeitig eine aeltere Version liefern, als
+      # bereits im Add-on steckt (siehe README). Ohne diesen Schutz wuerde
+      # der naechste Schritt versuchen, das Submodule auf diese aeltere
+      # Version "zurueckzusetzen" und mit einem bereits existierenden Tag
+      # hart fehlschlagen (fatal: tag already exists), statt den Lauf
+      # einfach folgenlos zu ueberspringen.
+      - name: Auf echtes Update pruefen
+        id: compare
+        run: |
+          NEWEST=$(printf '%s\n%s\n' "${{ steps.current.outputs.version }}" "${{ steps.latest.outputs.version }}" | sort -V | tail -1)
+          if [ "${{ steps.latest.outputs.version }}" = "${{ steps.current.outputs.version }}" ] || [ "$NEWEST" != "${{ steps.latest.outputs.version }}" ]; then
+            echo "Server-Release ${{ steps.latest.outputs.tag }} ist nicht neuer als aktuelle Add-on-Version ${{ steps.current.outputs.version }} - nichts zu tun."
+            echo "should_update=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_update=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Submodule + Version aktualisieren und taggen
-        if: steps.latest.outputs.version != steps.current.outputs.version
+        if: steps.compare.outputs.should_update == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
