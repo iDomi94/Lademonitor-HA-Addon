@@ -32,10 +32,20 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.PAT_TOKEN || github.token }}
 
+      # Mit Token abfragen: anonym teilen sich alle Jobs auf demselben
+      # Runner-Host das Limit von 60 Anfragen/Stunde je IP, und GitHub
+      # antwortet dann mit 403 (so am 17.10.2026 passiert). Mit GITHUB_TOKEN
+      # gilt das Limit des Repos (1000/Stunde). Ein voruebergehender Fehler
+      # wird zusaetzlich wiederholt.
       - name: Neueste Server-Version ermitteln
         id: latest
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          TAG=$(curl -fsSL https://api.github.com/repos/iDomi94/Lademonitor-Server/releases/latest | jq -r .tag_name)
+          TAG=$(curl -fsSL --retry 3 --retry-delay 10 --retry-all-errors \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/iDomi94/Lademonitor-Server/releases/latest | jq -r .tag_name)
           if [ -z "$TAG" ] || [ "$TAG" = "null" ]; then
             echo "Kein Release gefunden" >&2
             exit 1
