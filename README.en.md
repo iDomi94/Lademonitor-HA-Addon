@@ -1,3 +1,5 @@
+<p align="center"><img src="lademonitor/icon.png" alt="Lademonitor" width="112"></p>
+
 # Lademonitor – Home Assistant Add-on
 
 **Language:** English | [Deutsch](README.md)
